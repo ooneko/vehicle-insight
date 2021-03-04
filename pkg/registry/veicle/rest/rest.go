@@ -2,4 +2,4 @@ package rest
 
 type RESTStorageProvider struct{}
 
-func (p RESTStorageProvider) NewRESTStorage()
+func (p RESTStorageProvider) NewRESTStorage() {}

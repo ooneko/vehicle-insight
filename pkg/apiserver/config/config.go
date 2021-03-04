@@ -1,10 +1,9 @@
 package config
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/spf13/viper"
-	"ooneko.github.com/vehicle-insight/pkg/simple/client/etcd"
 )
 
 const (
@@ -13,13 +12,10 @@ const (
 )
 
 type Config struct {
-	EtcdOptions *etcd.Options
 }
 
 func new() *Config {
-	return &Config{
-		EtcdOptions: etcd.New(),
-	}
+	return &Config{}
 }
 
 func Load() *Config {
@@ -30,14 +26,16 @@ func Load() *Config {
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Print("configration file not found")
+			// log.Print("configration file not found")
 			return config
 		}
-		log.Panic("error parsing configuration", err)
+		msg := fmt.Sprintf("error parsing configuration %v", err)
+		panic(msg)
 	}
 
 	if err := viper.Unmarshal(config); err != nil {
-		log.Panic("error unmarshal configration", err)
+		msg := fmt.Sprintf("error unmarshal configration %v", err)
+		panic(msg)
 	}
 	return config
 }

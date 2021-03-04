@@ -5,11 +5,13 @@ import "fmt"
 const (
 	ErrCodeKeyNotFound int = iota + 1
 	ErrCodeKeyExists
+	ErrCodeResourceVersionConflicts
 )
 
 var errorCodeToMessage = map[int]string{
-	ErrCodeKeyNotFound: "key not found",
-	ErrCodeKeyExists:   "key exists",
+	ErrCodeKeyNotFound:              "key not found",
+	ErrCodeKeyExists:                "key exists",
+	ErrCodeResourceVersionConflicts: "resource version conflicts",
 }
 
 func NewKeyNotFoundError(key string, rv uint64) *StorageError {
@@ -23,6 +25,14 @@ func NewKeyNotFoundError(key string, rv uint64) *StorageError {
 func NewKeyExistError(key string, rv uint64) *StorageError {
 	return &StorageError{
 		Code:            ErrCodeKeyExists,
+		Key:             key,
+		ResourceVersion: rv,
+	}
+}
+
+func NewResourceVersionConflicts(key string, rv uint64) *StorageError {
+	return &StorageError{
+		Code:            ErrCodeResourceVersionConflicts,
 		Key:             key,
 		ResourceVersion: rv,
 	}
