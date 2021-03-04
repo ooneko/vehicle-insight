@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"go.etcd.io/etcd/clientv3"
+	"go.uber.org/zap"
 	"golang.org/x/net/context"
 
 	metav1 "ooneko.github.com/vehicle-insight/pkg/apis/meta/v1"
@@ -19,16 +20,18 @@ type store struct {
 	getOps     []clientv3.OpOption
 	versioner  *APIObjectVersioner
 	pathPrefix string
+	logger     *zap.Logger
 }
 
-func New(c *clientv3.Client, prefix string) storage.Interface {
-	return newStore(c, prefix)
+func New(c *clientv3.Client, prefix string, logger *zap.Logger) storage.Interface {
+	return newStore(c, prefix, logger)
 }
 
-func newStore(c *clientv3.Client, prefix string) *store {
+func newStore(c *clientv3.Client, prefix string, logger *zap.Logger) *store {
 	return &store{
 		client:     c,
 		pathPrefix: path.Join("/", prefix),
+		logger:     logger,
 	}
 }
 
@@ -78,13 +81,51 @@ func (s *store) Get(ctx context.Context, key string, resourceVersion string, out
 }
 
 func (s *store) Delete(ctx context.Context, key string, out interface{}) error {
-
+	key = path.Join(s.pathPrefix, key)
+	for {
+		getResp, err := s.client.KV.Get(ctx, key)
+		if err != nil {
+			return err
+		}
+		txnResp, err := s.client.KV.Txn(ctx).If(
+			clientv3.Compare(clientv3.ModRevision(key), "=", getResp.Header.Revision),
+		).Then(
+			clientv3.OpDelete(key),
+		).Commit()
+		if err != nil {
+			return err
+		}
+		if !txnResp.Succeeded {
+			continue
+		}
+	}
+	return nil
 }
 
-func (s *store) List(ctx context.Context, key string, resourceVersion string, listObj interface{}) error {
+func (s *store) List(ctx context.Context, key string, resourceVersion string, listObj []metav1.Object) error {
+	getResp, err := s.client.KV.Get(ctx, key, clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+	if err = s.ensureMinimumResourceVersion(resourceVersion, uint64(getResp.Header.Revision)); err != nil {
+		return err
+	}
+
+	for _, kv := range getResp.Kvs {
+		var o metav1.Object
+		if err := json.Unmarshal(kv.Value, o); err != nil {
+			s.logger.Sugar().Errorf("json unmarshal: %v", err)
+			return err
+		}
+		listObj = append(listObj, o)
+	}
+	return nil
 }
 
-func (s *store) Update(ctx context.Context, key string, obj, out interface{}) error {}
+func (s *store) Update(ctx context.Context, key string, obj, out interface{}) error {
+	key = path.Join(s.pathPrefix, key)
+
+}
 
 func (s *store) ensureMinimumResourceVersion(minimumResourceVersion string, actualRevision uint64) error {
 	if minimumResourceVersion == "" || minimumResourceVersion == "0" {

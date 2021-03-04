@@ -1,14 +1,30 @@
-package v1alpha1
+package v1
 
-import "time"
+import (
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 type Vehicle struct {
-	Name      string `json:"name,omitempty"`
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Spec VehicleSpec
+}
+
+type VehicleList struct {
+	metav1.TypeMeta
+	metav1.ObjectMeta
+
+	Items []Vehicle
+}
+
+type VehicleSpec struct {
 	Model     Model  `json:"model,omitempty"`
 	Kilometer int32  `json:"kilometer,omitempty"`
 	Parts     []Part `json:"parts,omitempty"`
 }
-
 type Part struct {
 	Name string `json:"name,omitempty"`
 	Life Life   `json:"life,omitempty"`
@@ -24,10 +40,8 @@ type Model struct {
 	Version string `json:"version,omitempty"`
 }
 
-type UUID string
-
 type MaintenanceRecord struct {
-	UUID        UUID
+	UUID        string    `json:uuid,omitempty`
 	ServiceDate time.Time `json:"service_date,omitempty"`
 	CreatedDate time.Time `json:"created_date,omitempty"`
 	UseLife     Life      `json:"use_life,omitempty"`

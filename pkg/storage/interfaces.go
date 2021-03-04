@@ -11,7 +11,7 @@ type Interface interface {
 
 	Delete(ctx context.Context, key string, out interface{}) error
 
-	Get(ctx context.Context, key string, resourceVersion string, out metav1.Object, ignoreNotFound bool)
+	Get(ctx context.Context, key string, resourceVersion string, out metav1.Object, ignoreNotFound bool) error
 
 	List(ctx context.Context, key string, resourceVersion string, listObj interface{}) error
 

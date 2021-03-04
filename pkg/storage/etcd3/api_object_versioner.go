@@ -29,3 +29,8 @@ func (a APIObjectVersioner) PrepareObjectForStorage(obj metav1.Object) error {
 	obj.SetResourceVersion("")
 	return nil
 }
+
+func (a APIObjectVersioner) UpdateList(obj metav1.Object, resourceVersion uint64) error {
+	obj.SetResourceVersion(strconv.FormatUint(resourceVersion, 10))
+	return nil
+}
