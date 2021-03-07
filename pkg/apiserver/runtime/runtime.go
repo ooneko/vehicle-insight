@@ -1,6 +1,9 @@
 package runtime
 
-import "github.com/emicklei/go-restful"
+import (
+	"github.com/emicklei/go-restful"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
 
 const (
 	APIRootPath = "/"
@@ -8,9 +11,9 @@ const (
 
 var Container = restful.NewContainer()
 
-func NewWebService(path string) *restful.WebService {
+func NewWebService(gv schema.GroupVersion) *restful.WebService {
 	webservice := &restful.WebService{}
-	webservice.Path(APIRootPath + "/" + path).
+	webservice.Path(APIRootPath + "/" + gv.String()).
 		Produces(restful.MIME_JSON)
 	return webservice
 }
